@@ -1,24 +1,52 @@
 const dotenv = require("dotenv");
 dotenv.config({ path: "./config.env" });
+const express = require("express");
+const morgan = require("morgan");
+require("./cronJob");
 
-const cron = require("node-cron");
+const { createServer } = require("http");
 
-console.log(`Job Started.`);
+const PORT = process.env.PORT || 8000;
+const app = express();
 
-cron.schedule(" */5 * * * *", async () => {
-  fetch(process.env.TOURNEST_API)
-    .then((response) => {
-      if (response.ok) {
-        console.log(
-          `API called at: ${new Date().toLocaleTimeString()}, Status code: ${
-            response.status
-          }`
-        );
-        return response.json();
-      } else {
-        throw new Error("Network response was not ok");
-      }
-    })
-    .then((data) => console.log(data))
-    .catch((err) => console.error(`Error fetching data:  ${err}`));
+app.use(morgan("tiny")); // setup the logger
+app.use(express.json({ limit: "30kb" })); // Parse incoming requests with JSON payloads.
+
+app.get("/", (req, res, next) => {
+  res.status(200).json({
+    status: "success",
+    code: 200,
+    message: "Hello World!",
+    data: {
+      link: "https://github.com/endeavourmonk/cors-proxy/blob/master/README.md",
+    },
+    timestamp: new Date().toLocaleString(),
+  });
 });
+
+app.all("*", (req, res, next) => {
+  res.status(404).json({
+    status: "failed",
+    message: "Route not found",
+    code: 500,
+    data: {
+      link: "https://github.com/endeavourmonk/cors-proxy/blob/master/README.md",
+    },
+    timestamp: new Date().toLocaleString(),
+  });
+});
+
+// Global error Handling
+app.use((err, req, res, next) => {
+  res.status(err.status || 500).json({
+    message: err.message,
+    code: err.status || 500,
+    timestamp: new Date().toLocaleString(),
+  });
+});
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
+module.exports = app;
