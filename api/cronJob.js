@@ -3,7 +3,7 @@ const cron = require("node-cron");
 console.log("job started");
 
 (() => {
-  cron.schedule("* * * * * *", async () => {
+  cron.schedule("*/5 * * * *", async () => {
     fetch(process.env.TOURNEST_API)
       .then((response) => {
         if (response.ok) {
